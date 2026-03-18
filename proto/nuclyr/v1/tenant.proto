@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package nuclyr.v1;
+
+import "google/protobuf/timestamp.proto";
+import "nuclyr/v1/common.proto";
+
+// Tenant service — multi-tenancy, teams, roles
+service TenantService {
+  rpc GetTenant(GetTenantRequest) returns (GetTenantResponse);
+  rpc UpdateTenant(UpdateTenantRequest) returns (UpdateTenantResponse);
+
+  // Team members
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
+  rpc InviteMember(InviteMemberRequest) returns (InviteMemberResponse);
+  rpc UpdateMemberRole(UpdateMemberRoleRequest) returns (UpdateMemberRoleResponse);
+  rpc RemoveMember(RemoveMemberRequest) returns (RemoveMemberResponse);
+}
+
+message GetTenantRequest {}
+
+message GetTenantResponse {
+  Tenant tenant = 1;
+}
+
+message UpdateTenantResponse {
+  Tenant tenant = 1;
+}
+
+message Tenant {
+  string tenant_id = 1;
+  string name = 2;
+  string slug = 3;
+  DeploymentMode mode = 4;
+  TenantPlan plan = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message UpdateTenantRequest {
+  string name = 1;
+  DeploymentMode mode = 2;
+}
+
+// Team members
+message ListMembersRequest {}
+
+message ListMembersResponse {
+  repeated TeamMember members = 1;
+}
+
+message InviteMemberRequest {
+  string email = 1;
+  TeamRole role = 2;
+}
+
+message InviteMemberResponse {
+  TeamMember member = 1;
+}
+
+message UpdateMemberRoleRequest {
+  string user_id = 1;
+  TeamRole role = 2;
+}
+
+message UpdateMemberRoleResponse {
+  TeamMember member = 1;
+}
+
+message RemoveMemberRequest {
+  string user_id = 1;
+}
+
+message RemoveMemberResponse {
+  bool removed = 1;
+}
+
+message TeamMember {
+  string user_id = 1;
+  string email = 2;
+  string display_name = 3;
+  TeamRole role = 4;
+  MemberStatus status = 5;
+  google.protobuf.Timestamp joined_at = 6;
+}
+
+enum TenantPlan {
+  TENANT_PLAN_UNSPECIFIED = 0;
+  TENANT_PLAN_COMMUNITY = 1;      // free
+  TENANT_PLAN_DEVELOPER = 2;      // ₹499/mo
+  TENANT_PLAN_STARTUP = 3;        // ₹4,999/mo
+  TENANT_PLAN_GROWTH = 4;         // 2% of spend
+  TENANT_PLAN_MANAGED_STARTER = 5;
+  TENANT_PLAN_MANAGED_BUSINESS = 6;
+  TENANT_PLAN_MANAGED_ENTERPRISE = 7;
+}
+
+enum TeamRole {
+  TEAM_ROLE_UNSPECIFIED = 0;
+  TEAM_ROLE_OWNER = 1;
+  TEAM_ROLE_ADMIN = 2;
+  TEAM_ROLE_MEMBER = 3;
+  TEAM_ROLE_VIEWER = 4;
+}
+
+enum MemberStatus {
+  MEMBER_STATUS_UNSPECIFIED = 0;
+  MEMBER_STATUS_ACTIVE = 1;
+  MEMBER_STATUS_INVITED = 2;
+  MEMBER_STATUS_DEACTIVATED = 3;
+}

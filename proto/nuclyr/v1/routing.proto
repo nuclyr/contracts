@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package nuclyr.v1;
+
+import "google/protobuf/timestamp.proto";
+import "nuclyr/v1/common.proto";
+import "nuclyr/v1/storage.proto";
+
+// Routing service — query routing decisions and pricing
+service RoutingService {
+  // Get a routing recommendation without executing
+  rpc Evaluate(EvaluateRequest) returns (EvaluateResponse);
+
+  // Get current pricing for a service across providers
+  rpc GetPricing(GetPricingRequest) returns (GetPricingResponse);
+
+  // Get routing decision log
+  rpc GetDecision(GetDecisionRequest) returns (GetDecisionResponse);
+
+  // List routing decisions (audit)
+  rpc ListDecisions(ListDecisionsRequest) returns (ListDecisionsResponse);
+}
+
+message EvaluateRequest {
+  ServiceType service_type = 1;
+  RoutingStrategy strategy = 2;
+  DataResidency residency = 3;
+  Money max_cost = 4;
+  map<string, string> constraints = 5;  // additional constraints
+}
+
+message EvaluateResponse {
+  repeated ProviderOption options = 1;   // ranked by strategy
+  ProviderOption recommended = 2;
+}
+
+message ProviderOption {
+  Provider provider = 1;
+  string region = 2;
+  Money estimated_cost = 3;
+  int32 estimated_latency_ms = 4;
+  bool dpdp_compliant = 5;
+  double score = 6;                      // normalized score (0-1)
+}
+
+message GetPricingRequest {
+  ServiceType service_type = 1;
+  string region_filter = 2;    // optional: filter by region
+}
+
+message GetPricingResponse {
+  repeated PricingEntry entries = 1;
+  google.protobuf.Timestamp last_updated = 2;
+}
+
+message PricingEntry {
+  Provider provider = 1;
+  string region = 2;
+  ServiceType service_type = 3;
+  string unit = 4;              // e.g. "GB/month", "vCPU/hour"
+  Money price_per_unit = 5;
+}
+
+message GetDecisionRequest {
+  string decision_id = 1;
+}
+
+message GetDecisionResponse {
+  RoutingDecision decision = 1;
+}
+
+message ListDecisionsRequest {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  ServiceType service_filter = 3;
+  PaginationRequest pagination = 4;
+}
+
+message ListDecisionsResponse {
+  repeated RoutingDecision decisions = 1;
+  PaginationResponse pagination = 2;
+}
+
+message RoutingDecision {
+  string decision_id = 1;
+  string tenant_id = 2;
+  ServiceType service_type = 3;
+  RoutingStrategy strategy_used = 4;
+  Provider chosen_provider = 5;
+  string chosen_region = 6;
+  Money estimated_cost = 7;
+  Money actual_cost = 8;
+  repeated ProviderOption candidates = 9;  // all evaluated options
+  google.protobuf.Timestamp decided_at = 10;
+  int64 evaluation_time_us = 11;           // microseconds to decide
+}
+
+enum ServiceType {
+  SERVICE_TYPE_UNSPECIFIED = 0;
+  SERVICE_TYPE_STORAGE = 1;
+  SERVICE_TYPE_COMPUTE = 2;
+  SERVICE_TYPE_QUEUE = 3;
+}

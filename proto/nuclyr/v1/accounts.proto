@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package nuclyr.v1;
+
+import "google/protobuf/timestamp.proto";
+import "nuclyr/v1/common.proto";
+
+// Accounts service — cloud account management
+service AccountsService {
+  rpc Connect(ConnectRequest) returns (ConnectResponse);
+  rpc Disconnect(DisconnectRequest) returns (DisconnectResponse);
+  rpc List(AccountsServiceListRequest) returns (AccountsServiceListResponse);
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc TestConnection(TestConnectionRequest) returns (TestConnectionResponse);
+}
+
+message ConnectRequest {
+  Provider provider = 1;
+  string display_name = 2;
+  oneof credentials {
+    AwsCredentials aws = 3;
+    GcpCredentials gcp = 4;
+    AzureCredentials azure = 5;
+  }
+}
+
+// AWS: assume-role based (least privilege)
+message AwsCredentials {
+  string role_arn = 1;           // arn:aws:iam::123:role/NuclyrAccess
+  string external_id = 2;       // for STS assume-role
+}
+
+// GCP: service account based
+message GcpCredentials {
+  string project_id = 1;
+  string service_account_json = 2;   // encrypted before storage
+}
+
+// Azure: service principal
+message AzureCredentials {
+  string tenant_id = 1;
+  string client_id = 2;
+  string client_secret = 3;     // encrypted before storage
+  string subscription_id = 4;
+}
+
+message ConnectResponse {
+  CloudAccount account = 1;
+}
+
+message CloudAccount {
+  string account_id = 1;
+  string tenant_id = 2;
+  Provider provider = 3;
+  string display_name = 4;
+  AccountStatus status = 5;
+  google.protobuf.Timestamp connected_at = 6;
+  google.protobuf.Timestamp last_verified_at = 7;
+}
+
+message DisconnectRequest {
+  string account_id = 1;
+}
+
+message DisconnectResponse {
+  bool disconnected = 1;
+}
+
+message AccountsServiceListRequest {
+  Provider provider_filter = 1;  // optional
+}
+
+message AccountsServiceListResponse {
+  repeated CloudAccount accounts = 1;
+}
+
+message GetRequest {
+  string account_id = 1;
+}
+
+message GetResponse {
+  CloudAccount account = 1;
+}
+
+message TestConnectionRequest {
+  string account_id = 1;
+}
+
+message TestConnectionResponse {
+  bool connected = 1;
+  string error_message = 2;
+  int32 latency_ms = 3;
+  repeated string permissions_verified = 4;  // which permissions work
+  repeated string permissions_missing = 5;   // which permissions are missing
+}
+
+enum AccountStatus {
+  ACCOUNT_STATUS_UNSPECIFIED = 0;
+  ACCOUNT_STATUS_ACTIVE = 1;
+  ACCOUNT_STATUS_ERROR = 2;
+  ACCOUNT_STATUS_DISCONNECTED = 3;
+  ACCOUNT_STATUS_VERIFYING = 4;
+}

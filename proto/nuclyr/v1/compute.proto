@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package nuclyr.v1;
+
+import "google/protobuf/timestamp.proto";
+import "nuclyr/v1/common.proto";
+import "nuclyr/v1/storage.proto";
+
+// Compute service — unified interface across Lambda, Cloud Run, Azure Functions
+service ComputeService {
+  rpc Run(RunRequest) returns (RunResponse);
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
+  rpc Cancel(CancelRequest) returns (CancelResponse);
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse);
+  rpc GetLogs(GetLogsRequest) returns (GetLogsResponse);
+}
+
+message RunRequest {
+  string function_name = 1;
+  bytes payload = 2;
+  ComputeOptions options = 3;
+}
+
+message RunResponse {
+  string job_id = 1;
+  bytes result = 2;
+  Provider provider = 3;
+  string region = 4;
+  int64 duration_ms = 5;
+  RoutingDecisionSummary routing = 6;
+}
+
+message GetStatusRequest {
+  string job_id = 1;
+}
+
+message GetStatusResponse {
+  JobStatus status = 1;
+}
+
+message JobStatus {
+  string job_id = 1;
+  JobState state = 2;
+  Provider provider = 3;
+  string region = 4;
+  google.protobuf.Timestamp started_at = 5;
+  google.protobuf.Timestamp completed_at = 6;
+  Money actual_cost = 7;
+  string error_message = 8;
+}
+
+message CancelRequest {
+  string job_id = 1;
+}
+
+message CancelResponse {
+  bool cancelled = 1;
+}
+
+message ListJobsRequest {
+  string function_name = 1;   // filter by function (optional)
+  JobState state_filter = 2;  // filter by state (optional)
+  PaginationRequest pagination = 3;
+}
+
+message ListJobsResponse {
+  repeated JobStatus jobs = 1;
+  PaginationResponse pagination = 2;
+}
+
+message GetLogsRequest {
+  string job_id = 1;
+  int32 tail_lines = 2;   // last N lines (default 100)
+}
+
+message GetLogsResponse {
+  repeated LogEntry entries = 1;
+}
+
+message LogEntry {
+  google.protobuf.Timestamp timestamp = 1;
+  string level = 2;
+  string message = 3;
+}
+
+message ComputeOptions {
+  Money max_cost = 1;
+  int32 timeout_seconds = 2;
+  int32 memory_mb = 3;
+  DataResidency residency = 4;
+  RoutingStrategy strategy = 5;
+  map<string, string> env = 6;
+}
+
+enum JobState {
+  JOB_STATE_UNSPECIFIED = 0;
+  JOB_STATE_PENDING = 1;
+  JOB_STATE_RUNNING = 2;
+  JOB_STATE_COMPLETED = 3;
+  JOB_STATE_FAILED = 4;
+  JOB_STATE_CANCELLED = 5;
+}

@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package nuclyr.v1;
+
+import "google/protobuf/timestamp.proto";
+import "nuclyr/v1/common.proto";
+
+// Compliance service — DPDP checks, audit logs, regulatory exports
+service ComplianceService {
+  // DPDP data residency scanning
+  rpc ScanResidency(ScanResidencyRequest) returns (ScanResidencyResponse);
+  rpc GetScanResult(GetScanResultRequest) returns (GetScanResultResponse);
+  rpc ListScans(ListScansRequest) returns (ListScansResponse);
+
+  // Audit logs
+  rpc ListAuditLogs(ListAuditLogsRequest) returns (ListAuditLogsResponse);
+  rpc ExportAuditLogs(ExportAuditLogsRequest) returns (ExportAuditLogsResponse);
+}
+
+// DPDP Scanning
+message ScanResidencyRequest {
+  repeated string cloud_account_ids = 1;   // which accounts to scan (empty = all)
+  repeated ScanTarget targets = 2;         // specific buckets/resources (empty = all)
+}
+
+message ScanTarget {
+  Provider provider = 1;
+  string resource_type = 2;   // "storage", "compute", "database"
+  string resource_id = 3;     // bucket name, function name, etc.
+}
+
+message ScanResidencyResponse {
+  string scan_id = 1;
+  ScanStatus status = 2;      // usually PENDING — scan runs async
+}
+
+message GetScanResultRequest {
+  string scan_id = 1;
+}
+
+message GetScanResultResponse {
+  ComplianceScan scan = 1;
+}
+
+message ListScansRequest {
+  PaginationRequest pagination = 1;
+}
+
+message ListScansResponse {
+  repeated ComplianceScan scans = 1;
+  PaginationResponse pagination = 2;
+}
+
+message ComplianceScan {
+  string scan_id = 1;
+  ScanStatus status = 2;
+  int32 total_resources = 3;
+  int32 compliant_count = 4;
+  int32 violation_count = 5;
+  repeated ComplianceFinding findings = 6;
+  google.protobuf.Timestamp started_at = 7;
+  google.protobuf.Timestamp completed_at = 8;
+}
+
+message ComplianceFinding {
+  string finding_id = 1;
+  FindingSeverity severity = 2;
+  Provider provider = 3;
+  string resource_type = 4;
+  string resource_id = 5;
+  string region = 6;
+  string violation_type = 7;     // "DATA_OUTSIDE_INDIA", "PII_DETECTED", etc.
+  string description = 8;
+  string remediation = 9;        // suggested fix
+}
+
+enum ScanStatus {
+  SCAN_STATUS_UNSPECIFIED = 0;
+  SCAN_STATUS_PENDING = 1;
+  SCAN_STATUS_RUNNING = 2;
+  SCAN_STATUS_COMPLETED = 3;
+  SCAN_STATUS_FAILED = 4;
+}
+
+enum FindingSeverity {
+  FINDING_SEVERITY_UNSPECIFIED = 0;
+  FINDING_SEVERITY_CRITICAL = 1;
+  FINDING_SEVERITY_HIGH = 2;
+  FINDING_SEVERITY_MEDIUM = 3;
+  FINDING_SEVERITY_LOW = 4;
+  FINDING_SEVERITY_INFO = 5;
+}
+
+// Audit logs
+message ListAuditLogsRequest {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  string action_filter = 3;       // optional: filter by action type
+  string actor_filter = 4;        // optional: filter by user
+  PaginationRequest pagination = 5;
+}
+
+message ListAuditLogsResponse {
+  repeated AuditEntry entries = 1;
+  PaginationResponse pagination = 2;
+}
+
+message AuditEntry {
+  string entry_id = 1;
+  string tenant_id = 2;
+  string actor_id = 3;
+  string actor_email = 4;
+  string action = 5;              // "storage.upload", "account.connect", etc.
+  string resource_type = 6;
+  string resource_id = 7;
+  map<string, string> metadata = 8;
+  string ip_address = 9;
+  google.protobuf.Timestamp timestamp = 10;
+}
+
+// Export for regulatory purposes (RBI/SEBI)
+message ExportAuditLogsRequest {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  ExportFormat format = 3;
+}
+
+message ExportAuditLogsResponse {
+  string download_url = 1;
+  ExportFormat format = 2;
+  int32 entry_count = 3;
+}
+
+enum ExportFormat {
+  EXPORT_FORMAT_UNSPECIFIED = 0;
+  EXPORT_FORMAT_JSON = 1;
+  EXPORT_FORMAT_PDF = 2;
+  EXPORT_FORMAT_CSV = 3;
+}

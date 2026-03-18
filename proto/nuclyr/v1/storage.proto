@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package nuclyr.v1;
+
+import "google/protobuf/timestamp.proto";
+import "nuclyr/v1/common.proto";
+
+// Storage service — unified interface across S3, GCS, Azure Blob
+service StorageService {
+  rpc Upload(UploadRequest) returns (UploadResponse);
+  rpc Download(DownloadRequest) returns (DownloadResponse);
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+  rpc List(ListRequest) returns (ListResponse);
+  rpc Presign(PresignRequest) returns (PresignResponse);
+  rpc GetMetadata(GetMetadataRequest) returns (GetMetadataResponse);
+}
+
+message UploadRequest {
+  string bucket = 1;
+  string key = 2;
+  bytes content = 3;
+  string content_type = 4;
+  StorageOptions options = 5;
+}
+
+message UploadResponse {
+  string key = 1;
+  string etag = 2;
+  Provider provider = 3;
+  string region = 4;
+  RoutingDecisionSummary routing = 5;
+}
+
+message DownloadRequest {
+  string bucket = 1;
+  string key = 2;
+}
+
+message DownloadResponse {
+  bytes content = 1;
+  string content_type = 2;
+  ObjectMetadata metadata = 3;
+}
+
+message DeleteRequest {
+  string bucket = 1;
+  string key = 2;
+}
+
+message DeleteResponse {
+  bool deleted = 1;
+}
+
+message ListRequest {
+  string bucket = 1;
+  string prefix = 2;
+  PaginationRequest pagination = 3;
+}
+
+message ListResponse {
+  repeated ObjectMetadata objects = 1;
+  PaginationResponse pagination = 2;
+}
+
+message PresignRequest {
+  string bucket = 1;
+  string key = 2;
+  PresignOperation operation = 3;
+  int32 expires_in_seconds = 4;  // default 3600
+}
+
+message PresignResponse {
+  string url = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message GetMetadataRequest {
+  string bucket = 1;
+  string key = 2;
+}
+
+message GetMetadataResponse {
+  ObjectMetadata metadata = 1;
+}
+
+message ObjectMetadata {
+  string bucket = 1;
+  string key = 2;
+  int64 size_bytes = 3;
+  string content_type = 4;
+  string etag = 5;
+  Provider provider = 6;
+  string region = 7;
+  google.protobuf.Timestamp last_modified = 8;
+}
+
+message StorageOptions {
+  DataResidency residency = 1;
+  Money max_cost = 2;             // hard cost cap for this operation
+  RoutingStrategy strategy = 3;   // override default strategy
+  map<string, string> tags = 4;   // custom metadata tags
+}
+
+enum DataResidency {
+  DATA_RESIDENCY_UNSPECIFIED = 0;
+  DATA_RESIDENCY_INDIA_ONLY = 1;
+  DATA_RESIDENCY_ANY = 2;
+}
+
+enum PresignOperation {
+  PRESIGN_OPERATION_UNSPECIFIED = 0;
+  PRESIGN_OPERATION_GET = 1;
+  PRESIGN_OPERATION_PUT = 2;
+}
+
+// Summary of routing decision (returned with every operation)
+message RoutingDecisionSummary {
+  Provider chosen_provider = 1;
+  string chosen_region = 2;
+  RoutingStrategy strategy_used = 3;
+  Money estimated_cost = 4;
+  string decision_id = 5;   // for audit trail lookup
+}

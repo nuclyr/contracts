@@ -1,0 +1,200 @@
+syntax = "proto3";
+
+package nuclyr.v1;
+
+import "google/protobuf/timestamp.proto";
+import "nuclyr/v1/common.proto";
+
+// Billing service — cost tracking, invoices, spend caps, credits
+service BillingService {
+  // Cost reports
+  rpc GetCostSummary(GetCostSummaryRequest) returns (GetCostSummaryResponse);
+  rpc GetCostBreakdown(GetCostBreakdownRequest) returns (GetCostBreakdownResponse);
+
+  // Invoices
+  rpc ListInvoices(ListInvoicesRequest) returns (ListInvoicesResponse);
+  rpc GetInvoice(GetInvoiceRequest) returns (GetInvoiceResponse);
+
+  // Spend caps
+  rpc SetSpendCap(SetSpendCapRequest) returns (SetSpendCapResponse);
+  rpc GetSpendCaps(GetSpendCapsRequest) returns (GetSpendCapsResponse);
+
+  // Credits (managed mode)
+  rpc GetCreditBalance(GetCreditBalanceRequest) returns (GetCreditBalanceResponse);
+  rpc AddCredits(AddCreditsRequest) returns (AddCreditsResponse);
+  rpc ListCreditTransactions(ListCreditTransactionsRequest) returns (ListCreditTransactionsResponse);
+}
+
+// Cost summary
+message GetCostSummaryRequest {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+}
+
+message GetCostSummaryResponse {
+  CostSummary summary = 1;
+}
+
+message CostSummary {
+  Money total_spend = 1;
+  Money total_saved = 2;          // vs single-provider pricing
+  int32 total_operations = 3;
+  google.protobuf.Timestamp from = 4;
+  google.protobuf.Timestamp to = 5;
+}
+
+message GetCostBreakdownRequest {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  CostGroupBy group_by = 3;
+}
+
+message GetCostBreakdownResponse {
+  CostBreakdown breakdown = 1;
+}
+
+message CostBreakdown {
+  repeated CostBucket buckets = 1;
+}
+
+message CostBucket {
+  string label = 1;             // provider name, service type, or date
+  Money amount = 2;
+  int32 operation_count = 3;
+}
+
+enum CostGroupBy {
+  COST_GROUP_BY_UNSPECIFIED = 0;
+  COST_GROUP_BY_PROVIDER = 1;
+  COST_GROUP_BY_SERVICE = 2;
+  COST_GROUP_BY_DAY = 3;
+  COST_GROUP_BY_REGION = 4;
+}
+
+// Invoices
+message ListInvoicesRequest {
+  PaginationRequest pagination = 1;
+}
+
+message ListInvoicesResponse {
+  repeated Invoice invoices = 1;
+  PaginationResponse pagination = 2;
+}
+
+message GetInvoiceRequest {
+  string invoice_id = 1;
+}
+
+message GetInvoiceResponse {
+  Invoice invoice = 1;
+}
+
+message Invoice {
+  string invoice_id = 1;
+  string invoice_number = 2;    // INV-2025-001 style
+  google.protobuf.Timestamp period_start = 3;
+  google.protobuf.Timestamp period_end = 4;
+  Money subtotal = 5;
+  Money gst_amount = 6;          // CGST + SGST or IGST
+  Money total = 7;
+  InvoiceStatus status = 8;
+  string pdf_url = 9;
+  google.protobuf.Timestamp created_at = 10;
+}
+
+enum InvoiceStatus {
+  INVOICE_STATUS_UNSPECIFIED = 0;
+  INVOICE_STATUS_DRAFT = 1;
+  INVOICE_STATUS_ISSUED = 2;
+  INVOICE_STATUS_PAID = 3;
+  INVOICE_STATUS_OVERDUE = 4;
+}
+
+// Spend caps
+message SetSpendCapRequest {
+  SpendCapScope scope = 1;
+  string scope_id = 2;           // service name, job name, etc.
+  Money limit = 3;
+  SpendCapPeriod period = 4;
+}
+
+message GetSpendCapsRequest {}
+
+message GetSpendCapsResponse {
+  repeated SpendCap caps = 1;
+}
+
+message SetSpendCapResponse {
+  SpendCap cap = 1;
+}
+
+message SpendCap {
+  string cap_id = 1;
+  SpendCapScope scope = 2;
+  string scope_id = 3;
+  Money limit = 4;
+  Money current_usage = 5;
+  SpendCapPeriod period = 6;
+  bool is_exceeded = 7;
+}
+
+enum SpendCapScope {
+  SPEND_CAP_SCOPE_UNSPECIFIED = 0;
+  SPEND_CAP_SCOPE_GLOBAL = 1;
+  SPEND_CAP_SCOPE_SERVICE = 2;
+  SPEND_CAP_SCOPE_JOB = 3;
+}
+
+enum SpendCapPeriod {
+  SPEND_CAP_PERIOD_UNSPECIFIED = 0;
+  SPEND_CAP_PERIOD_DAILY = 1;
+  SPEND_CAP_PERIOD_WEEKLY = 2;
+  SPEND_CAP_PERIOD_MONTHLY = 3;
+}
+
+// Credits (managed mode)
+message GetCreditBalanceRequest {}
+
+message GetCreditBalanceResponse {
+  CreditBalance balance = 1;
+}
+
+message AddCreditsResponse {
+  CreditBalance balance = 1;
+}
+
+message CreditBalance {
+  Money balance = 1;
+  google.protobuf.Timestamp last_topup = 2;
+  Money total_credited = 3;
+  Money total_consumed = 4;
+}
+
+message AddCreditsRequest {
+  Money amount = 1;
+  string payment_reference = 2;    // Razorpay payment ID
+}
+
+message ListCreditTransactionsRequest {
+  PaginationRequest pagination = 1;
+}
+
+message ListCreditTransactionsResponse {
+  repeated CreditTransaction transactions = 1;
+  PaginationResponse pagination = 2;
+}
+
+message CreditTransaction {
+  string transaction_id = 1;
+  Money amount = 2;
+  CreditTransactionType type = 3;
+  string reference = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+enum CreditTransactionType {
+  CREDIT_TRANSACTION_TYPE_UNSPECIFIED = 0;
+  CREDIT_TRANSACTION_TYPE_TOPUP = 1;
+  CREDIT_TRANSACTION_TYPE_USAGE = 2;
+  CREDIT_TRANSACTION_TYPE_REFUND = 3;
+}

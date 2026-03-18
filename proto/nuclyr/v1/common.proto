@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package nuclyr.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Cloud provider enum
+enum Provider {
+  PROVIDER_UNSPECIFIED = 0;
+  PROVIDER_AWS = 1;
+  PROVIDER_GCP = 2;
+  PROVIDER_AZURE = 3;
+}
+
+// Cloud region
+message Region {
+  Provider provider = 1;
+  string region_id = 2;     // e.g. "ap-south-1", "asia-south1", "centralindia"
+  string display_name = 3;  // e.g. "Mumbai (AWS)"
+  bool supports_dpdp = 4;   // whether data residency in India is guaranteed
+}
+
+// Routing strategy
+enum RoutingStrategy {
+  ROUTING_STRATEGY_UNSPECIFIED = 0;
+  ROUTING_STRATEGY_COST_OPTIMIZED = 1;
+  ROUTING_STRATEGY_LATENCY_FIRST = 2;
+  ROUTING_STRATEGY_COMPLIANCE_FIRST = 3;
+}
+
+// Deployment mode
+enum DeploymentMode {
+  DEPLOYMENT_MODE_UNSPECIFIED = 0;
+  DEPLOYMENT_MODE_BYOC = 1;
+  DEPLOYMENT_MODE_MANAGED = 2;
+}
+
+// Currency
+enum Currency {
+  CURRENCY_UNSPECIFIED = 0;
+  CURRENCY_INR = 1;
+  CURRENCY_USD = 2;
+}
+
+// Money amount
+message Money {
+  int64 amount_minor = 1;   // amount in smallest unit (paise for INR, cents for USD)
+  Currency currency = 2;
+}
+
+// Pagination
+message PaginationRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+message PaginationResponse {
+  string next_page_token = 1;
+  int32 total_count = 2;
+}
+
+// Standard error detail
+message ErrorDetail {
+  string code = 1;
+  string message = 2;
+  map<string, string> metadata = 3;
+}
+
+// Request metadata (injected by middleware)
+message RequestContext {
+  string tenant_id = 1;
+  string user_id = 2;
+  string request_id = 3;
+  google.protobuf.Timestamp timestamp = 4;
+}

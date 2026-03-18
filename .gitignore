@@ -1,0 +1,6 @@
+# Generated files are committed (so downstream repos can use them without buf)
+# But keep build artifacts out
+*.pyc
+__pycache__/
+node_modules/
+target/
