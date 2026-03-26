@@ -6,7 +6,7 @@ import "google/protobuf/timestamp.proto";
 import "nuclyr/v1/common.proto";
 import "nuclyr/v1/storage.proto";
 
-// Routing service — query routing decisions and pricing
+// Routing service - query routing decisions and pricing
 service RoutingService {
   // Get a routing recommendation without executing
   rpc Evaluate(EvaluateRequest) returns (EvaluateResponse);

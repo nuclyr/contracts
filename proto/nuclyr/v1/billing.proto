@@ -5,7 +5,7 @@ package nuclyr.v1;
 import "google/protobuf/timestamp.proto";
 import "nuclyr/v1/common.proto";
 
-// Billing service — cost tracking, invoices, spend caps, credits
+// Billing service - cost tracking, invoices, spend caps, credits
 service BillingService {
   // Cost reports
   rpc GetCostSummary(GetCostSummaryRequest) returns (GetCostSummaryResponse);

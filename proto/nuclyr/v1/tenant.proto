@@ -5,7 +5,7 @@ package nuclyr.v1;
 import "google/protobuf/timestamp.proto";
 import "nuclyr/v1/common.proto";
 
-// Tenant service — multi-tenancy, teams, roles
+// Tenant service - multi-tenancy, teams, roles
 service TenantService {
   rpc GetTenant(GetTenantRequest) returns (GetTenantResponse);
   rpc UpdateTenant(UpdateTenantRequest) returns (UpdateTenantResponse);

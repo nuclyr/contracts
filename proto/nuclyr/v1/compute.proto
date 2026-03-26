@@ -6,7 +6,7 @@ import "google/protobuf/timestamp.proto";
 import "nuclyr/v1/common.proto";
 import "nuclyr/v1/storage.proto";
 
-// Compute service — unified interface across Lambda, Cloud Run, Azure Functions
+// Compute service - unified interface across Lambda, Cloud Run, Azure Functions
 service ComputeService {
   rpc Run(RunRequest) returns (RunResponse);
   rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);

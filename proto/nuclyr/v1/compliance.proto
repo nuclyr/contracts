@@ -5,7 +5,7 @@ package nuclyr.v1;
 import "google/protobuf/timestamp.proto";
 import "nuclyr/v1/common.proto";
 
-// Compliance service — DPDP checks, audit logs, regulatory exports
+// Compliance service - DPDP checks, audit logs, regulatory exports
 service ComplianceService {
   // DPDP data residency scanning
   rpc ScanResidency(ScanResidencyRequest) returns (ScanResidencyResponse);
@@ -31,7 +31,7 @@ message ScanTarget {
 
 message ScanResidencyResponse {
   string scan_id = 1;
-  ScanStatus status = 2;      // usually PENDING — scan runs async
+  ScanStatus status = 2;      // usually PENDING - scan runs async
 }
 
 message GetScanResultRequest {

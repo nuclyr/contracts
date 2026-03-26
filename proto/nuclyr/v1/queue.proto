@@ -6,7 +6,7 @@ import "google/protobuf/timestamp.proto";
 import "nuclyr/v1/common.proto";
 import "nuclyr/v1/storage.proto";
 
-// Queue service — unified interface across SQS, Pub/Sub, Azure Service Bus
+// Queue service - unified interface across SQS, Pub/Sub, Azure Service Bus
 service QueueService {
   rpc Publish(PublishRequest) returns (PublishResponse);
   rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse);

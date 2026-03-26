@@ -5,7 +5,7 @@ package nuclyr.v1;
 import "google/protobuf/timestamp.proto";
 import "nuclyr/v1/common.proto";
 
-// Accounts service — cloud account management
+// Accounts service - cloud account management
 service AccountsService {
   rpc Connect(ConnectRequest) returns (ConnectResponse);
   rpc Disconnect(DisconnectRequest) returns (DisconnectResponse);
