@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://nuclyr.cloud/logo.svg" alt="nuclyr" height="36" />
+</p>
+
 # @nuclyr/contracts
 
 Protobuf contracts defining the Nuclyr API surface. Single source of truth for types shared between the engine (Rust), SDKs (TypeScript, Python, Go), and API.
